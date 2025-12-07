@@ -1,19 +1,19 @@
 import streamlit as st
+import google.generativeai as genai
 
-# configurações da página
 st.set_page_config(
     page_title="RAG ENEM Dashboard",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# chave da OpenAI (definida em st.secrets)
-OPENAI_API_KEY = st.secrets.get("openai_api_key")
+GEMINI_API_KEY = st.secrets.get("gemini_api_key")
 
-# modelos utilizados
-EMBEDDING_MODEL = "text-embedding-ada-002"
-CHAT_MODEL     = "gpt-4o-mini"
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
-# caminhos e constantes
+EMBEDDING_MODEL = "models/text-embedding-004"
+CHAT_MODEL      = "models/gemini-2.5-pro"
+
 RUBRIC_CSV_PATH = r"data/rubric.csv"
 K_NEIGHBORS     = 3

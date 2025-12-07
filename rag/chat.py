@@ -1,10 +1,9 @@
 import streamlit as st
 import json
-from openai import OpenAI, OpenAIError
-from config import OPENAI_API_KEY, CHAT_MODEL
+import google.generativeai as genai
+from config import CHAT_MODEL
 
-client = OpenAI(api_key=OPENAI_API_KEY)
-
+# O system_prompt_base permanece o mesmo do seu arquivo original...
 system_prompt_base = """
 Você é um corretor automatizado especialista na Matriz de Referência da Redação do ENEM 2024, avaliando textos dissertativo-argumentativos conforme os critérios oficiais do INEP.
 
@@ -70,22 +69,24 @@ Não inclua texto, explicações ou qualquer outro conteúdo além deste JSON.
 
 @st.cache_resource
 def correct_text(user_text: str, system_context: str = "") -> str:
-    prompt = system_prompt_base.strip()
+    # 1. Concatena o contexto ao prompt do sistema se houver
+    full_system_instruction = system_prompt_base
     if system_context:
-        prompt += "\n\nContexto adicional:\n" + system_context
+        full_system_instruction += "\n\nContexto adicional da Rubrica:\n" + system_context
 
-    messages = [
-        {"role": "system", "content": prompt},
-        {"role": "user", "content": user_text.strip()}
-    ]
+    # 2. Instancia o modelo com a instrução de sistema
+    # O Gemini suporta 'response_mime_type': 'application/json' para garantir o formato
+    model = genai.GenerativeModel(
+        model_name=CHAT_MODEL,
+        system_instruction=full_system_instruction,
+        generation_config={"response_mime_type": "application/json"}
+    )
 
     try:
-        response = client.chat.completions.create(
-            model=CHAT_MODEL,
-            messages=messages
-        )
-        return response.choices[0].message.content.strip()
-    except (OpenAIError, json.JSONDecodeError) as e:
-        st.error(f"Erro na API ou na conversão do JSON: {e}")
+        # 3. Gera o conteúdo
+        response = model.generate_content(user_text.strip())
+        return response.text.strip()
+        
+    except Exception as e:
+        st.error(f"Erro na API do Gemini: {e}")
         return "{}"
-

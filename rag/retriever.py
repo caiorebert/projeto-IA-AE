@@ -1,25 +1,30 @@
 import streamlit as st
 import numpy as np
 import faiss
-from openai import OpenAI
-from openai import OpenAIError
+import google.generativeai as genai
 
 import config
-from rag.embeddings import init_vector_store
-
-client = OpenAI(api_key=config.OPENAI_API_KEY)
 
 def retrieve_context(user_text: str, index: faiss.Index, df_rubric: any, k: int = config.K_NEIGHBORS) -> str:
     try:
-        res = client.embeddings.create(input=user_text, model=config.EMBEDDING_MODEL)
-        emb = np.array(res.data[0].embedding, dtype="float32")
+        # Gera embedding da pergunta do usuário
+        res = genai.embed_content(
+            model=config.EMBEDDING_MODEL,
+            content=user_text,
+            task_type="retrieval_query" # Otimiza para a pergunta de busca
+        )
+        emb = np.array(res['embedding'], dtype="float32")
+        
         if emb.ndim == 1:
             emb = emb.reshape(1, -1)
+        
         faiss.normalize_L2(emb)
-    except OpenAIError as e:
+        
+        # Realiza a busca no índice FAISS
+        _, I = index.search(emb, k)
+        contexts = df_rubric.iloc[I[0]]["criteria"].tolist()
+        return "\n".join(contexts)
+
+    except Exception as e:
         st.error(f"Erro ao gerar embedding do usuário: {e}")
         return ""
-
-    _, I = index.search(emb, k)
-    contexts = df_rubric.iloc[I[0]]["criteria"].tolist()
-    return "\n".join(contexts)
