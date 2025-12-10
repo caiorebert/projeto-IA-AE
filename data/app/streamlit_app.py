@@ -12,11 +12,11 @@ from rag.chat import correct_text
 from ui.sidebar import render_sidebar
 from ui.chat_window import render_chat_window
 from ui.dashboard import render_dashboard
-from utils.file_loader import load_uploaded_file # Importando função existente
 import json
 import re
 
 # --- CONFIGURAÇÃO DE SEGURANÇA ---
+# Se a IA falhar, usamos estes valores para não quebrar o gráfico
 DEFAULT_METRICS = {
     "nota_final": 0,
     "nota_c1": 0, "nota_c2": 0, "nota_c3": 0, "nota_c4": 0, "nota_c5": 0,
@@ -40,7 +40,7 @@ def extract_metrics_from_response(response: str) -> dict:
         return {}
 
 def main():
-    # 1. INJEÇÃO DE CSS (MANTIDO SEU ESTILO ATUAL)
+    # 1. INJEÇÃO DE CSS (Tema Escuro)
     st.markdown(
         """
         <style>
@@ -63,16 +63,13 @@ def main():
         unsafe_allow_html=True
     )
 
-    # 2. CAPTURA DOS DADOS DA SIDEBAR (Agora recebe uploaded_files também)
-    uploaded_files, user_text_input, submit = render_sidebar()
-    
-    # Carrega embeddings
+    user_text, submit = render_sidebar()
     df_rubric, index = init_vector_store()
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    # HEADER
+    # 2. HEADER
     st.markdown(
         """
         <div style='padding: 20px; border-radius: 12px; background-color: #2e2e2e; border-left: 5px solid #64FFDA; box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.4);'>
@@ -80,7 +77,7 @@ def main():
             <p style='color: #DDDDDD; font-size: 16px; margin-top: 0;'>
                 Bem-vindo(a), <b>Caio Rebert</b>!
                 <br>
-                Envie múltiplas redações para correção em lote.
+                Ferramenta de correção de redações com Gemini AI e RAG.
             </p>
         </div>
         <br>
@@ -88,51 +85,25 @@ def main():
         unsafe_allow_html=True
     )
     
-    if submit:
-        # Monta lista de textos para processar
-        texts_to_process = []
-        
-        # 1. Adiciona texto colado manualmente
-        if user_text_input.strip():
-            texts_to_process.append(user_text_input)
+    if submit and user_text.strip():
+        with st.spinner("Analisando redação com IA..."):
+            context = retrieve_context(user_text, index, df_rubric)
+            corrected = correct_text(user_text, context)
             
-        # 2. Adiciona textos dos arquivos
-        if uploaded_files:
-            for file in uploaded_files:
-                content = load_uploaded_file(file) # Usa sua função utilitária
-                if content.strip():
-                    texts_to_process.append(content)
-        
-        if not texts_to_process:
-            st.warning("Nenhum texto encontrado para correção.")
-        else:
-            # Barra de progresso para múltiplas correções
-            progress_bar = st.progress(0)
-            total = len(texts_to_process)
+            # --- CORREÇÃO DO ERRO KEYERROR ---
+            extracted = extract_metrics_from_response(corrected)
             
-            for i, text in enumerate(texts_to_process):
-                with st.spinner(f"Corrigindo redação {i+1} de {total}..."):
-                    # Lógica de RAG e Correção
-                    context = retrieve_context(text, index, df_rubric)
-                    corrected = correct_text(text, context)
-                    
-                    extracted = extract_metrics_from_response(corrected)
-                    
-                    final_metrics = DEFAULT_METRICS.copy()
-                    if extracted:
-                        final_metrics.update(extracted)
-                    
-                    final_metrics["texto_original"] = text
-                    final_metrics["Interação"] = len(st.session_state.chat_history) + 1
-                    
-                    st.session_state.chat_history.append(final_metrics)
-                
-                # Atualiza barra
-                progress_bar.progress((i + 1) / total)
+            # Começa com os zeros padrão e atualiza se a IA mandou algo válido
+            final_metrics = DEFAULT_METRICS.copy()
+            if extracted:
+                final_metrics.update(extracted)
             
-            st.success(f"{total} redações corrigidas com sucesso!")
+            final_metrics["texto_original"] = user_text
+            final_metrics["Interação"] = len(st.session_state.chat_history) + 1
+            
+            st.session_state.chat_history.append(final_metrics)
 
-    # Renderiza Dashboard
+    #render_chat_window(st.session_state.chat_history)
     render_dashboard(st.session_state.chat_history)
 
 if __name__ == "__main__":
