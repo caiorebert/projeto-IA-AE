@@ -6,6 +6,7 @@ import google.generativeai as genai
 import config
 
 def retrieve_context(user_text: str, index: faiss.Index, df_rubric: any, k: int = config.K_NEIGHBORS) -> str:
+    return "Contexto da Rubrica (Simulado para testes offline)."
     try:
         # Gera embedding da pergunta do usuário
         res = genai.embed_content(

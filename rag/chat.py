@@ -69,6 +69,28 @@ Não inclua texto, explicações ou qualquer outro conteúdo além deste JSON.
 
 @st.cache_resource
 def correct_text(user_text: str, system_context: str = "") -> str:
+    return """
+        {
+          "nota_final": 760,
+          "nota_c1": 140,
+          "nota_c2": 160,
+          "nota_c3": 140,
+          "nota_c4": 160,
+          "nota_c5": 160,
+          "metrica_um": 3,
+          "metrica_dois": 2,
+          "metrica_tres": 1,
+          "metrica_quatro": 1,
+          "metrica_cinco": 0,
+          "metrica_seis": 150,
+          "metrica_sete": 12,
+          "metrica_oito": 95,
+          "metrica_nove": 7,
+          "metrica_dez": 420,
+          "metrica_onze": "Neutro",
+          "anulacao": ""
+        }
+        """
     # 1. Concatena o contexto ao prompt do sistema se houver
     full_system_instruction = system_prompt_base
     if system_context:

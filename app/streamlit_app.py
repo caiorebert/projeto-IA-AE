@@ -76,13 +76,13 @@ def main():
     st.markdown(
         """
         <div style='padding: 20px; border-radius: 12px; background-color: #2e2e2e; border-left: 5px solid #64FFDA; box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.4);'>
-            <h1 style='color: #64FFDA; margin-bottom: 5px; font-size: 30px;'>RAG ENEM Dashboard | IA</h1>
+            <h1 style='color: #64FFDA; margin-bottom: 5px; font-size: 30px;'>Corretor de Redação ENEM - IMD</h1>
             <p style='color: #DDDDDD; font-size: 16px; margin-top: 0;'>
                 Bem-vindo(a), <b>Caio Rebert</b>!
                 <br>
                 Envie múltiplas redações para correção em lote.
             </p>
-        </div>
+        </div>  
         <br>
         """,
         unsafe_allow_html=True

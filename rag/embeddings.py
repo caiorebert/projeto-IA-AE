@@ -12,25 +12,30 @@ def load_rubric_embeddings(
     df = pd.read_csv(rubric_csv_path)
     texts = df["criteria"].astype(str).tolist()
 
+    # embeddings = []
+    # for text in texts:
+    #     try:
+    #         # A chamada do Gemini para embeddings
+    #         res = genai.embed_content(
+    #             model=embed_model,
+    #             content=text,
+    #             task_type="retrieval_document" # Otimiza para documentos sendo indexados
+    #         )
+    #         emb = np.array(res['embedding'], dtype="float32")
+    #         embeddings.append(emb)
+    #     except Exception as e:
+    #         st.error(f"Erro ao gerar embedding para '{text[:30]}...': {e}")
+    #         # Fallback para dimensão 768 (padrão do text-embedding-004)
+    #         if embeddings:
+    #             dim = embeddings[0].shape[0]
+    #         else:
+    #             dim = 768
+    #         embeddings.append(np.zeros(dim, dtype="float32"))
     embeddings = []
-    for text in texts:
-        try:
-            # A chamada do Gemini para embeddings
-            res = genai.embed_content(
-                model=embed_model,
-                content=text,
-                task_type="retrieval_document" # Otimiza para documentos sendo indexados
-            )
-            emb = np.array(res['embedding'], dtype="float32")
-            embeddings.append(emb)
-        except Exception as e:
-            st.error(f"Erro ao gerar embedding para '{text[:30]}...': {e}")
-            # Fallback para dimensão 768 (padrão do text-embedding-004)
-            if embeddings:
-                dim = embeddings[0].shape[0]
-            else:
-                dim = 768 
-            embeddings.append(np.zeros(dim, dtype="float32"))
+    # MOCK: Gera vetores aleatórios/zeros para não usar a API na inicialização
+    dim = 768  # Dimensão padrão
+    for _ in texts:
+        embeddings.append(np.zeros(dim, dtype="float32"))
 
     emb_matrix = np.vstack(embeddings)
     if emb_matrix.ndim == 1:
